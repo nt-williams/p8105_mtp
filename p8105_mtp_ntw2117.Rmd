@@ -9,3 +9,17 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
+```{r import data}
+accel_data <- read_csv("./data/p8105_mtp_data.csv") %>% 
+  janitor::clean_names()
+```
+
+```{r normalize or tidy data}
+accel_data %>% 
+  gather(key = "minute", value = "activity_count", activity_1:activity_1440) %>% 
+  separate(minute, into = c("drop", "minute"), sep = "_") %>% 
+  select(-drop)
+```
+
+
+

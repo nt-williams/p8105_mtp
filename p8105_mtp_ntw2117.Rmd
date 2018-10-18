@@ -7,6 +7,8 @@ output: github_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(patchwork)
+
 theme_set(theme_bw())
 ```
 
@@ -46,13 +48,13 @@ accel_data %>%
   geom_violin() + 
   scale_y_continuous(trans = "log")
 ```
-
+  
 ```{r}
 accel_data %>% 
   ggplot(aes(x = hour, y = activity_count)) + 
   geom_point() 
 ```
-
+  
 ```{r}
 accel_data %>% 
   group_by(hour) %>% 
@@ -68,7 +70,7 @@ accel_data %>%
   ggplot(aes(x = hour, y = avg_activity, group = 1)) +
   geom_line()
 ```
-
+  
 ```{r}
 accel_data %>% 
   group_by(day) %>% 
@@ -76,6 +78,40 @@ accel_data %>%
   ggplot(aes(x = day, y = avg_activity, group = 1)) +
   geom_line()
 ```
+
+```{r plotting the mean and median activity count across weeks by day, warning = FALSE, message = FALSE, fig.align = "center", fig.width = 9, fig.asp = .6, out.width = "100%", dpi = 300}
+med_actvty_week_day <- accel_data %>% 
+  group_by(week, day) %>% 
+  summarize(med_actvty = median(activity_count)) %>% 
+  ggplot(aes(x = week, y = med_actvty)) + 
+  facet_grid(~ day) + 
+  geom_line() + 
+  labs(y = "Median Activity Count") +
+  geom_smooth(color = "#A35E60", size = 1, se = FALSE) + 
+  scale_y_continuous(limits = c(0, 400)) + 
+  theme(strip.background = element_rect(fill = "black"),
+        strip.text = element_text(color = "white",
+                                  face = "bold"), 
+        axis.text.x = element_blank(), 
+        axis.title.x = element_blank()
+  )
+
+mean_actvty_week_day <- accel_data %>% 
+  group_by(week, day) %>% 
+  summarize(mean_actvty = mean(activity_count)) %>% 
+  ggplot(aes(x = week, y = mean_actvty)) + 
+  facet_grid(~ day) + 
+  geom_line() + 
+  labs(x = "Week", 
+       y = "Mean Activity Count") + 
+  geom_smooth(color = "#A35E60", se = FALSE) + 
+  theme(strip.background = element_blank(), 
+        strip.text = element_blank())
+
+wrap_elements(med_actvty_week_day / mean_actvty_week_day) + 
+  ggtitle("Median and mean activity count over time stratified by the day of the week")
+```
+
 
 
 

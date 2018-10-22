@@ -47,7 +47,11 @@ accel_data <- accel_data %>%
   )
 ```
 
-### Exploratory analyses plots
+The first steps in this analysis required importing and tidying the accelerametor data. After importing the data I noticed that each row represented one day during a week in the data set and that the variables activity_1 through activity_4 represented minutes of the day. I thus transformed the dataset from wide form to long form by creating a new variable called minute that recorded what minute of the day each row corresponds to. I then created a new variable called hour that recorded what hour of the day (on a 24 hour clock) each observation belonged to. Lastly, I created  another week variable that collapsed the weeks into 9 week intervals. I also ordered the day variable so that the factor levels followed the actual order of the week.
+
+The cleaned accelerametor dataset contains `r nrow(accel_data)` observations and `r ncol(accel_data)` variables. 
+
+### Exploratory analyses
 
 ```{r density plots of activity over the weeks, out.width = "75%", fig.align = "center", dpi = 300, warning = FALSE}
 density_full <- accel_data %>% 

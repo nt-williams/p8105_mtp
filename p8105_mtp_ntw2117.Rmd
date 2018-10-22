@@ -41,9 +41,25 @@ accel_data <- accel_data %>%
 ```
 
 ### Exploratory analyses plots
+
+```{r}
+accel_data %>% 
+  ggplot(aes(x = activity_count)) + 
+  geom_density()
+
+accel_data %>% 
+  mutate(log_actvty_count = log(activity_count), 
+         week = as.factor(week)) %>% 
+  ggplot(aes(x = log_actvty_count, color = week)) + 
+  geom_density()
+
+# maybe split up these density plots so they are zoomed in on different ranges of values
+# explore the use of the geometric mean
+```
+
   
 ```{r median activity by day and hour, fig.asp = .7, out.width = "75%", fig.align = "center", dpi = 300}
-med_actvty_all_days <- accel_data %>% #add this line to next plot
+med_actvty_all_days <- accel_data %>% 
   group_by(hour) %>% 
   summarize(med_activity = median(activity_count)) %>% 
   mutate(day = as.factor("All days"), 
@@ -58,6 +74,7 @@ accel_data %>%
   geom_line(data = med_actvty_all_days, lty = "dashed", size = 1.5) + 
   viridis::scale_color_viridis(name = "Day of the week", 
                                discrete = TRUE, 
+                               option = "cividis",
                                breaks = c("All days", "Sunday", "Monday", "Tuesday",
                                           "Wednesday", "Thursday", "Friday", "Saturday")) + 
   scale_x_continuous(limits = c(0, 24), 
@@ -85,7 +102,6 @@ med_actvty_week_day <- accel_data %>%
   geom_line() + 
   labs(y = "Median Activity Count") +
   geom_smooth(color = "#A35E60", size = 1, se = FALSE) + 
-  scale_y_continuous(limits = c(0, 400)) + 
   theme(strip.background = element_blank(),
         strip.text = element_text(color = "black"),
         axis.text.x = element_blank(), 
@@ -94,12 +110,13 @@ med_actvty_week_day <- accel_data %>%
 
 mean_actvty_week_day <- accel_data %>% 
   group_by(week, day) %>% 
-  summarize(mean_actvty = mean(activity_count)) %>% 
-  ggplot(aes(x = week, y = mean_actvty)) + 
+  mutate(log_actvty = log(activity_count)) %>% 
+  summarize(geo_avg_actvty = exp(mean(log_actvty))) %>% # using geometric mean due to how skewed data is
+  ggplot(aes(x = week, y = geo_avg_actvty)) + 
   facet_grid(~ day) + 
   geom_line() + 
   labs(x = "Week", 
-       y = "Mean Activity Count") + 
+       y = "Geometric Mean Activity Count") + 
   geom_smooth(color = "#A35E60", se = FALSE) + 
   theme(strip.background = element_blank(), 
         strip.text = element_blank())

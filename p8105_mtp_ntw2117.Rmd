@@ -12,14 +12,14 @@ library(patchwork)
 theme_set(theme_bw())
 ```
 
-## Importing data
+### Importing data
 
 ```{r importing data, message = FALSE}
 accel_data <- read_csv("./data/p8105_mtp_data.csv") %>% 
   janitor::clean_names()
 ```
 
-## Cleaning data
+### Cleaning data
 
 ```{r normalize or tidy data and creating an hour variable}
 accel_data <- accel_data %>% 
@@ -49,14 +49,14 @@ accel_data <- accel_data %>%
 
 ### Exploratory analyses plots
 
-```{r out.width = "80%", fig.align = "center", dpi = 300, warning = FALSE}
+```{r density plots of activity over the weeks, out.width = "75%", fig.align = "center", dpi = 300, warning = FALSE}
 density_full <- accel_data %>% 
   mutate(log_actvty_count = log(activity_count)) %>% 
   ggplot(aes(x = log_actvty_count, color = week_fct)) +
   geom_density(size = 0.75, fill = "grey", alpha = 0.1) + 
   viridis::scale_color_viridis(discrete = TRUE, 
                                name = "Week", 
-                               option = "magma") + 
+                               option = "cividis") + 
   labs(x = "Log Activity Count", 
        y = "Density") + 
   theme(legend.position = c(.93, .68), 
@@ -72,7 +72,7 @@ density_zoom_1 <- accel_data %>%
   coord_cartesian(xlim = c(0, 1)) + 
   viridis::scale_color_viridis(discrete = TRUE, 
                                guide = FALSE, 
-                               option = "magma") + 
+                               option = "cividis") + 
   labs(caption = "Log activity zoomed between 0 and 1") + 
   theme(axis.title.x = element_blank(), 
         axis.title.y = element_blank())
@@ -84,7 +84,7 @@ density_zoom_2 <- accel_data %>%
   coord_cartesian(xlim = c(2, 8), ylim = c(0, 0.3)) + 
   viridis::scale_color_viridis(discrete = TRUE, 
                                guide = FALSE, 
-                               option = "magma") +  
+                               option = "cividis") +  
   labs(caption = "Log activity zoomed between 2 and 8") + 
   theme(axis.title.x = element_blank(), 
         axis.title.y = element_blank())
@@ -93,8 +93,21 @@ wrap_elements(density_full / (density_zoom_1 + density_zoom_2)) +
   ggtitle("Density plots of log activity count with zoomed axis")
 ```
 
+```{r fig.asp = .7, out.width = "70%", dpi = 300, fig.align = "center"}
+accel_data %>% 
+  group_by(day) %>% 
+  mutate(log_actvty = log(activity_count)) %>% 
+  summarize(geo_avg_actvty = exp(mean(log_actvty))) %>%
+  ggplot(aes(x = day, y = geo_avg_actvty)) + 
+  geom_point(size = 4, color = "#A35E60") + 
+  geom_line(group = 1) + 
+  labs(title = "Geometric average activity count by the day of the week", 
+       x = "Day of the week", 
+       y = "Geometric average activity count", 
+       caption = "Data provided by Jeff Goldmsith, PhD")
+```
   
-```{r median activity by day and hour, fig.asp = .7, out.width = "75%", fig.align = "center", dpi = 300}
+```{r median activity by day and hour, fig.asp = .7, out.width = "70%", fig.align = "center", dpi = 300}
 med_actvty_all_days <- accel_data %>% 
   group_by(hour) %>% 
   summarize(med_activity = median(activity_count)) %>% 

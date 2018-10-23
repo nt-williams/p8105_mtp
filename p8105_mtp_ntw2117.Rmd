@@ -49,7 +49,27 @@ accel_data <- accel_data %>%
 
 The first steps in this analysis required importing and tidying the accelerametor data. After importing the data I noticed that each row represented one day during a week in the data set and that the variables activity_1 through activity_4 represented minutes of the day. I thus transformed the dataset from wide form to long form by creating a new variable called minute that recorded what minute of the day each row corresponds to. I then created a new variable called hour that recorded what hour of the day (on a 24 hour clock) each observation belonged to. Lastly, I created  another week variable that collapsed the weeks into 9 week intervals. I also ordered the day variable so that the factor levels followed the actual order of the week.
 
-The cleaned accelerametor dataset contains `r nrow(accel_data)` observations and `r ncol(accel_data)` variables. 
+The cleaned accelerametor dataset contains `r nrow(accel_data)` observations/minutes and `r ncol(accel_data)` variables. This represents `r nrow(accel_data) / 1440` days or `r as.integer(nrow(accel_data) / 24)` hours worth of data. The data is highly right skewed; as such, the median and/or geometric mean are used throughout this analysis in leu of the mean. The median and geometric average activity count throughout the entire observation period were `r median(accel_data$activity_count)` and `r round(exp(mean(log(accel_data$activity_count))), 2)` respectively. The modal activity count was 1, indicating no activity, with `r accel_data %>% group_by(activity_count) %>% summarize(n = n()) %>% filter(n == max(n)) %>% .$n` observed minutes.
+
+```{r table of median and geo mean according to day of the week}
+day_median <- accel_data %>% 
+  group_by(day) %>% 
+  summarize(med_count = round(median(activity_count), 2)) %>% 
+  spread(key = day, value = med_count) %>% 
+  mutate(Measure = "Median") %>% 
+  select(Measure, everything())
+            
+day_geo_mean <- accel_data %>% 
+  group_by(day) %>% 
+  summarize(geo_count = round(exp(mean(log(activity_count))), 2)) %>% 
+  spread(key = day, value = geo_count) %>% 
+  mutate(Measure = "Geometric mean") %>% 
+  select(Measure, everything())
+
+bind_rows(day_median, day_geo_mean) %>% 
+  knitr::kable()
+```
+
 
 ### Exploratory analyses
 
@@ -97,7 +117,7 @@ wrap_elements(density_full / (density_zoom_1 + density_zoom_2)) +
   ggtitle("Density plots of log activity count with zoomed axis")
 ```
 
-```{r fig.asp = .7, out.width = "70%", dpi = 300, fig.align = "center"}
+```{r activity by day line plot, fig.asp = .7, out.width = "70%", dpi = 300, fig.align = "center"}
 accel_data %>% 
   group_by(day) %>% 
   mutate(log_actvty = log(activity_count)) %>% 

@@ -148,6 +148,8 @@ accel_data %>%
        y = "Total activity count", 
        caption = "Data provided by Jeff Goldmsith, PhD")
 ```
+
+There must be some days in which the individual was very active on Sundays and not very active on Mondays and Tuesdays that we see opposite plots. The geometric mean plot shows a weekly trend in activity while the total activity plot shows the days where the most and least activity occured throughout the whole observation period. 
   
 ```{r median activity by day and hour, fig.asp = .7, out.width = "70%", fig.align = "center", dpi = 300}
 med_actvty_all_days <- accel_data %>% 
@@ -183,6 +185,32 @@ accel_data %>%
         legend.box.background = element_rect(color = "black"))
 ```
 
+```{r total activity across weeks, out.width = "100%", fig.width = 10, fig.asp = 0.7, fig.align = "center", dpi = 300}
+total_actvty <- accel_data %>% 
+  group_by(week) %>% 
+  summarize(total_actvty = sum(activity_count)) %>% 
+  ggplot(aes(x = week, y = total_actvty)) + 
+  geom_line() + 
+  geom_smooth(color = "#A35E60", se = FALSE) + 
+  labs(x = "Week", 
+       y = "Total Activity")
+
+total_actvty_week_day <- accel_data %>% 
+  group_by(week, day) %>% 
+  summarize(total_actvty = sum(activity_count)) %>% # using geometric mean due to how skewed data is
+  ggplot(aes(x = week, y = total_actvty)) + 
+  facet_grid(~ day) + 
+  geom_line() + 
+  labs(x = "Week", 
+       y = "Total Activity") + 
+  geom_smooth(color = "#A35E60", se = FALSE) + 
+  theme(strip.background = element_blank(), 
+        strip.text = element_text(color = "black")
+  )
+
+wrap_elements(total_actvty / total_actvty_week_day) + 
+  ggtitle("Total activity trends over the observation period")
+```
 
 ```{r plotting the mean and median activity count across weeks by day, warning = FALSE, message = FALSE, fig.align = "center", fig.width = 10, fig.asp = .8, out.width = "100%", dpi = 300}
 total_actvty_week_day <- accel_data %>% 

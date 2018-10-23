@@ -49,7 +49,7 @@ accel_data <- accel_data %>%
 
 The first steps in this analysis required importing and tidying the accelerametor data. After importing the data I noticed that each row represented one day during a week in the data set and that the variables activity_1 through activity_4 represented minutes of the day. I thus transformed the dataset from wide form to long form by creating a new variable called minute that recorded what minute of the day each row corresponds to. I then created a new variable called hour that recorded what hour of the day (on a 24 hour clock) each observation belonged to. Lastly, I created  another week variable that collapsed the weeks into 9 week intervals. I also ordered the day variable so that the factor levels followed the actual order of the week.
 
-The cleaned accelerametor dataset contains `r nrow(accel_data)` observations/minutes and `r ncol(accel_data)` variables. This represents `r nrow(accel_data) / 1440` days or `r as.integer(nrow(accel_data) / 24)` hours worth of data. The data is highly right skewed; as such, the median and/or geometric mean are used throughout this analysis in leu of the mean. The median and geometric average activity count throughout the entire observation period were `r median(accel_data$activity_count)` and `r round(exp(mean(log(accel_data$activity_count))), 2)` respectively. The modal activity count was 1, indicating no activity, with `r accel_data %>% group_by(activity_count) %>% summarize(n = n()) %>% filter(n == max(n)) %>% .$n` observed minutes.
+The cleaned accelerametor dataset contains `r nrow(accel_data)` observations/minutes and `r ncol(accel_data)` variables. This represents `r nrow(accel_data) / 1440` days or `r as.integer(nrow(accel_data) / 24)` hours worth of data. The data is highly right skewed; as such, in addition to total activity, the median and/or geometric mean are used throughout this analysis in leu of the mean. The median and geometric average activity count throughout the entire observation period were `r median(accel_data$activity_count)` and `r round(exp(mean(log(accel_data$activity_count))), 2)` respectively. The modal activity count was 1, indicating no activity, with `r accel_data %>% group_by(activity_count) %>% summarize(n = n()) %>% filter(n == max(n)) %>% .$n` observed minutes.
 
 ```{r table of median and geo mean according to day of the week}
 day_median <- accel_data %>% 
@@ -68,6 +68,13 @@ day_geo_mean <- accel_data %>%
 
 bind_rows(day_median, day_geo_mean) %>% 
   knitr::kable()
+
+accel_data %>% # Lets think about this for a bit
+  group_by(day) %>% 
+  summarize(total_count = sum(activity_count)) %>% 
+  spread(key = day, value = total_count) %>% 
+  mutate(Measure = "Total Activity") %>% 
+  select(Measure, everything())
 ```
 
 
@@ -129,6 +136,17 @@ accel_data %>%
        x = "Day of the week", 
        y = "Geometric average activity count", 
        caption = "Data provided by Jeff Goldmsith, PhD")
+
+accel_data %>% 
+  group_by(day) %>% 
+  summarize(total_actvty = sum(activity_count)) %>%
+  ggplot(aes(x = day, y = total_actvty)) + 
+  geom_point(size = 4, color = "#A35E60") + 
+  geom_line(group = 1) + 
+  labs(title = "Total activity count by the day of the week", 
+       x = "Day of the week", 
+       y = "Total activity count", 
+       caption = "Data provided by Jeff Goldmsith, PhD")
 ```
   
 ```{r median activity by day and hour, fig.asp = .7, out.width = "70%", fig.align = "center", dpi = 300}
@@ -166,7 +184,22 @@ accel_data %>%
 ```
 
 
-```{r plotting the mean and median activity count across weeks by day, warning = FALSE, message = FALSE, fig.align = "center", fig.width = 10, fig.asp = .6, out.width = "100%", dpi = 300}
+```{r plotting the mean and median activity count across weeks by day, warning = FALSE, message = FALSE, fig.align = "center", fig.width = 10, fig.asp = .8, out.width = "100%", dpi = 300}
+total_actvty_week_day <- accel_data %>% 
+  group_by(week, day) %>% 
+  summarize(total_actvty = sum(activity_count)) %>% # using geometric mean due to how skewed data is
+  ggplot(aes(x = week, y = total_actvty)) + 
+  facet_grid(~ day) + 
+  geom_line() + 
+  labs(x = "Week", 
+       y = "Total Activity Count") + 
+  geom_smooth(color = "#A35E60", se = FALSE) + 
+  theme(strip.background = element_blank(), 
+        strip.text = element_text(color = "black"),
+        axis.text.x = element_blank(), 
+        axis.title.x = element_blank()
+  )
+        
 med_actvty_week_day <- accel_data %>% 
   group_by(week, day) %>% 
   summarize(med_actvty = median(activity_count)) %>% 
@@ -176,7 +209,7 @@ med_actvty_week_day <- accel_data %>%
   labs(y = "Median Activity Count") +
   geom_smooth(color = "#A35E60", size = 1, se = FALSE) + 
   theme(strip.background = element_blank(),
-        strip.text = element_text(color = "black"),
+        strip.text = element_blank(),
         axis.text.x = element_blank(), 
         axis.title.x = element_blank()
   )
@@ -194,8 +227,9 @@ mean_actvty_week_day <- accel_data %>%
   theme(strip.background = element_blank(), 
         strip.text = element_blank())
 
-wrap_elements(med_actvty_week_day / mean_actvty_week_day) + 
-  ggtitle("Median and mean activity count over time stratified by the day of the week")
+wrap_elements(total_actvty_week_day / med_actvty_week_day / mean_actvty_week_day) + 
+  ggtitle("Total median and geometric mean activity count over time stratified by the day of the week")
+
 ```
 
 

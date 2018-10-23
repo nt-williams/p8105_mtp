@@ -51,13 +51,13 @@ accel_data <- accel_data %>%
   )
 ```
 
-The first steps in this analysis required importing and tidying the data. I first transformed the dataset from wide form to long form (using the variables activity_1 to activity_1440) by creating a new variable called minute that records what minute of the day each row corresponds to. I then created a new variable called hour that recorded what hour of the day each observation belonged to. Lastly, I created  another week variable that collapsed the weeks into 5/6 week intervals. I also ordered the day variable so that the factor levels followed the actual order of the week.
+The first steps in this analysis required importing and tidying the data. I transformed the dataset from wide form to long form (using the variables activity_1 to activity_1440) by creating a new variable called minute that records what minute of the day each row corresponds to. I then created a new variable called hour that recorded what hour of the day each observation belonged to. Lastly, I created  another week variable that collapsed the weeks into 5/6 week intervals. The day variable was ordered so that the factor levels followed the actual order of the week.
 
-The cleaned accelerametor dataset contains `r nrow(accel_data)` observations/minutes and `r ncol(accel_data)` variables. Variables include the week, day, hour, and minute. Ultimately, the data represents `r nrow(accel_data) / 1440` days or `r as.integer(nrow(accel_data) / 24)` hours worth of data. The data is highly right skewed due to the presence of outliers; as such, in addition to total activity, the median and/or geometric mean are used throughout this analysis. The median and geometric average activity count throughout the entire observation period were `r median(accel_data$activity_count)` and `r round(exp(mean(log(accel_data$activity_count))), 2)` respectively. The modal activity count was 1, indicating no activity, with `r accel_data %>% group_by(activity_count) %>% summarize(n = n()) %>% filter(n == max(n)) %>% .$n` observed minutes.
+The cleaned accelerometer dataset contains `r nrow(accel_data)` observations and `r ncol(accel_data)` variables. Variables include the week, day, hour, and minute. Ultimately, the data represents `r nrow(accel_data) / 1440` days or `r as.integer(nrow(accel_data) / 24)` hours worth of data. The data is highly right skewed due to the presence of outliers; as such, in addition to total activity, the median and/or geometric mean are used throughout this analysis. The median and geometric average activity count throughout the entire observation period were `r median(accel_data$activity_count)` and `r round(exp(mean(log(accel_data$activity_count))), 2)` respectively. The modal activity count was 1 with `r accel_data %>% group_by(activity_count) %>% summarize(n = n()) %>% filter(n == max(n)) %>% .$n` observed minutes.
 
 ### Exploratory analyses
 
-```{r density plots of activity over the weeks, out.width = "80%", fig.align = "center", dpi = 300, warning = FALSE}
+```{r density plots of activity over the weeks, out.width = "75%", fig.align = "center", dpi = 300, warning = FALSE}
 density_full <- accel_data %>% 
   mutate(log_actvty_count = log(activity_count)) %>% 
   ggplot(aes(x = log_actvty_count, color = week_fct)) +
@@ -101,7 +101,7 @@ wrap_elements(density_full / (density_zoom_1 + density_zoom_2)) +
   ggtitle("Density plots of log activity count with zoomed axis")
 ```
 
-I plotted the distribution of the log activity counts stratified by weekly intervals. This can be seen in the above figure. The density plot is characterized by two distinct peaks centered around zero and six. Interestingly, the peak centered around zero (indicating minimal activity) begins to decrease as time moves forward while the peak centered around six begins to increase. This is the first indication that the individuals activity may have increased over time. 
+In the above figure, I plotted the distribution of the log activity counts stratified by weekly intervals. The density plot is characterized by two distinct peaks centered around zero and six. Interestingly, the peak centered around zero (indicating minimal activity) begins to decrease as time moves forward while the peak centered around six begins to increase. This is the first indication that the individuals activity may have increased over time. 
 
 ```{r activity by day line plot, fig.width = 10, fig.asp = .4, out.width = "100%", dpi = 300, fig.align = "center"}
 geo_agg_activity <- accel_data %>% 

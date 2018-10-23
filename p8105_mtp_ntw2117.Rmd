@@ -124,29 +124,29 @@ wrap_elements(density_full / (density_zoom_1 + density_zoom_2)) +
   ggtitle("Density plots of log activity count with zoomed axis")
 ```
 
-```{r activity by day line plot, fig.asp = .7, out.width = "70%", dpi = 300, fig.align = "center"}
-accel_data %>% 
+```{r activity by day line plot, fig.width = 10, fig.asp = .4, out.width = "100%", dpi = 300, fig.align = "center"}
+geo_agg_activity <- accel_data %>% 
   group_by(day) %>% 
   mutate(log_actvty = log(activity_count)) %>% 
   summarize(geo_avg_actvty = exp(mean(log_actvty))) %>%
   ggplot(aes(x = day, y = geo_avg_actvty)) + 
   geom_point(size = 4, color = "#A35E60") + 
   geom_line(group = 1) + 
-  labs(title = "Geometric average activity count by the day of the week", 
+  labs(title = "Geometric average activity by the day of the week", 
        x = "Day of the week", 
-       y = "Geometric average activity count", 
-       caption = "Data provided by Jeff Goldmsith, PhD")
+       y = "Geometric average activity count")
 
-accel_data %>% 
+total_agg_activity <- accel_data %>% 
   group_by(day) %>% 
   summarize(total_actvty = sum(activity_count)) %>%
   ggplot(aes(x = day, y = total_actvty)) + 
   geom_point(size = 4, color = "#A35E60") + 
   geom_line(group = 1) + 
-  labs(title = "Total activity count by the day of the week", 
+  labs(title = "Total activity by the day of the week", 
        x = "Day of the week", 
-       y = "Total activity count", 
-       caption = "Data provided by Jeff Goldmsith, PhD")
+       y = "Total activity count")
+
+total_agg_activity + geo_agg_activity
 ```
 
 There must be some days in which the individual was very active on Sundays and not very active on Mondays and Tuesdays that we see opposite plots. The geometric mean plot shows a weekly trend in activity while the total activity plot shows the days where the most and least activity occured throughout the whole observation period. 
@@ -185,15 +185,15 @@ accel_data %>%
         legend.box.background = element_rect(color = "black"))
 ```
 
-```{r total activity across weeks, out.width = "100%", fig.width = 10, fig.asp = 0.7, fig.align = "center", dpi = 300}
+```{r total activity across weeks, out.width = "100%", fig.width = 10, fig.asp = 0.65, fig.align = "center", dpi = 300, message = FALSE}
 total_actvty <- accel_data %>% 
   group_by(week) %>% 
   summarize(total_actvty = sum(activity_count)) %>% 
   ggplot(aes(x = week, y = total_actvty)) + 
   geom_line() + 
   geom_smooth(color = "#A35E60", se = FALSE) + 
-  labs(x = "Week", 
-       y = "Total Activity")
+  labs(y = "Total Activity") + 
+  theme(axis.title.x = element_blank())
 
 total_actvty_week_day <- accel_data %>% 
   group_by(week, day) %>% 
@@ -209,56 +209,9 @@ total_actvty_week_day <- accel_data %>%
   )
 
 wrap_elements(total_actvty / total_actvty_week_day) + 
-  ggtitle("Total activity trends over the observation period")
+  ggtitle("Trends in total activity over the observation period")
 ```
 
-```{r plotting the mean and median activity count across weeks by day, warning = FALSE, message = FALSE, fig.align = "center", fig.width = 10, fig.asp = .8, out.width = "100%", dpi = 300}
-total_actvty_week_day <- accel_data %>% 
-  group_by(week, day) %>% 
-  summarize(total_actvty = sum(activity_count)) %>% # using geometric mean due to how skewed data is
-  ggplot(aes(x = week, y = total_actvty)) + 
-  facet_grid(~ day) + 
-  geom_line() + 
-  labs(x = "Week", 
-       y = "Total Activity Count") + 
-  geom_smooth(color = "#A35E60", se = FALSE) + 
-  theme(strip.background = element_blank(), 
-        strip.text = element_text(color = "black"),
-        axis.text.x = element_blank(), 
-        axis.title.x = element_blank()
-  )
-        
-med_actvty_week_day <- accel_data %>% 
-  group_by(week, day) %>% 
-  summarize(med_actvty = median(activity_count)) %>% 
-  ggplot(aes(x = week, y = med_actvty)) + 
-  facet_grid(~ day) + 
-  geom_line() + 
-  labs(y = "Median Activity Count") +
-  geom_smooth(color = "#A35E60", size = 1, se = FALSE) + 
-  theme(strip.background = element_blank(),
-        strip.text = element_blank(),
-        axis.text.x = element_blank(), 
-        axis.title.x = element_blank()
-  )
-
-mean_actvty_week_day <- accel_data %>% 
-  group_by(week, day) %>% 
-  mutate(log_actvty = log(activity_count)) %>% 
-  summarize(geo_avg_actvty = exp(mean(log_actvty))) %>% # using geometric mean due to how skewed data is
-  ggplot(aes(x = week, y = geo_avg_actvty)) + 
-  facet_grid(~ day) + 
-  geom_line() + 
-  labs(x = "Week", 
-       y = "Geometric Mean Activity Count") + 
-  geom_smooth(color = "#A35E60", se = FALSE) + 
-  theme(strip.background = element_blank(), 
-        strip.text = element_blank())
-
-wrap_elements(total_actvty_week_day / med_actvty_week_day / mean_actvty_week_day) + 
-  ggtitle("Total median and geometric mean activity count over time stratified by the day of the week")
-
-```
 
 
 

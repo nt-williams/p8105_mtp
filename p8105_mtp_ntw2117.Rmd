@@ -47,9 +47,9 @@ accel_data <- accel_data %>%
   )
 ```
 
-The first steps in this analysis required importing and tidying the accelerametor data. After importing the data I noticed that each row represented one day during a week in the data set and that the variables activity_1 through activity_4 represented minutes of the day. I thus transformed the dataset from wide form to long form by creating a new variable called minute that recorded what minute of the day each row corresponds to. I then created a new variable called hour that recorded what hour of the day (on a 24 hour clock) each observation belonged to. Lastly, I created  another week variable that collapsed the weeks into 9 week intervals. I also ordered the day variable so that the factor levels followed the actual order of the week.
+The first steps in this analysis required importing and tidying the accelerametor data. After importing the data I noticed that each row represented one day during a week in the data set and that the variables activity_1 through activity_1440 represented minutes of the day. I thus transformed the dataset from wide form to long form by creating a new variable called minute that recorded what minute of the day each row corresponds to. I then created a new variable called hour that recorded what hour of the day (on a 24 hour clock) each observation belonged to. Lastly, I created  another week variable that collapsed the weeks into 9 week intervals. I also ordered the day variable so that the factor levels followed the actual order of the week.
 
-The cleaned accelerametor dataset contains `r nrow(accel_data)` observations/minutes and `r ncol(accel_data)` variables. This represents `r nrow(accel_data) / 1440` days or `r as.integer(nrow(accel_data) / 24)` hours worth of data. The data is highly right skewed; as such, in addition to total activity, the median and/or geometric mean are used throughout this analysis in leu of the mean. The median and geometric average activity count throughout the entire observation period were `r median(accel_data$activity_count)` and `r round(exp(mean(log(accel_data$activity_count))), 2)` respectively. The modal activity count was 1, indicating no activity, with `r accel_data %>% group_by(activity_count) %>% summarize(n = n()) %>% filter(n == max(n)) %>% .$n` observed minutes.
+The cleaned accelerametor dataset contains `r nrow(accel_data)` observations/minutes and `r ncol(accel_data)` variables. Variables include the week, day, hour, and minute. Ultimately, the data represents `r nrow(accel_data) / 1440` days or `r as.integer(nrow(accel_data) / 24)` hours worth of data. The data is highly right skewed due to the presence of outliers; as such, in addition to total activity, the median and/or geometric mean are used throughout this analysis in lieu of the mean. The median and geometric average activity count throughout the entire observation period were `r median(accel_data$activity_count)` and `r round(exp(mean(log(accel_data$activity_count))), 2)` respectively. The modal activity count was 1, indicating no activity, with `r accel_data %>% group_by(activity_count) %>% summarize(n = n()) %>% filter(n == max(n)) %>% .$n` observed minutes.
 
 ```{r table of median and geo mean according to day of the week}
 day_median <- accel_data %>% 
@@ -68,15 +68,7 @@ day_geo_mean <- accel_data %>%
 
 bind_rows(day_median, day_geo_mean) %>% 
   knitr::kable()
-
-accel_data %>% # Lets think about this for a bit
-  group_by(day) %>% 
-  summarize(total_count = sum(activity_count)) %>% 
-  spread(key = day, value = total_count) %>% 
-  mutate(Measure = "Total Activity") %>% 
-  select(Measure, everything())
 ```
-
 
 ### Exploratory analyses
 
@@ -124,6 +116,8 @@ wrap_elements(density_full / (density_zoom_1 + density_zoom_2)) +
   ggtitle("Density plots of log activity count with zoomed axis")
 ```
 
+As the first step of my analysis, I plotted the distribution of the log activity counts stratified by weekly intervals. This can be seen in the above figure. The density plot is characterized by two distinct peaks centered around zero and six. Interestingly, the peak centered around zero (indicating minimal activity) begins to decrease as time moves forward while the peak centered around six begins to increase. This is the first indication that the individuals activity may have increased over time. 
+
 ```{r activity by day line plot, fig.width = 10, fig.asp = .4, out.width = "100%", dpi = 300, fig.align = "center"}
 geo_agg_activity <- accel_data %>% 
   group_by(day) %>% 
@@ -149,7 +143,7 @@ total_agg_activity <- accel_data %>%
 total_agg_activity + geo_agg_activity
 ```
 
-There must be some days in which the individual was very active on Sundays and not very active on Mondays and Tuesdays that we see opposite plots. The geometric mean plot shows a weekly trend in activity while the total activity plot shows the days where the most and least activity occured throughout the whole observation period. 
+I also explored the effect of weekday on activity. The figure above shows total activity and the geometric mean of activity across the days of the week aggregated across all weeks. The lowest total activity occurs on Tuesdays while the highest among occurs on Friday's. Interestingly, however, based on the geometric mean, we'd expect that the lowest activity during any week would occur on Sunday instead of Tuesday. 
   
 ```{r median activity by day and hour, fig.asp = .7, out.width = "70%", fig.align = "center", dpi = 300}
 med_actvty_all_days <- accel_data %>% 
@@ -167,7 +161,7 @@ accel_data %>%
   geom_line(data = med_actvty_all_days, lty = "dashed", size = 1.5) + 
   viridis::scale_color_viridis(name = "Day of the week", 
                                discrete = TRUE, 
-                               option = "cividis",
+                               option = "viridis",
                                breaks = c("All days", "Sunday", "Monday", "Tuesday",
                                           "Wednesday", "Thursday", "Friday", "Saturday")) + 
   scale_x_continuous(limits = c(0, 24), 
@@ -184,6 +178,8 @@ accel_data %>%
         legend.background = element_blank(), 
         legend.box.background = element_rect(color = "black"))
 ```
+
+Furthermore, I investigated the effect of time of day on activity. The above figure shows trends in median hourly activity stratified by weekday as well as across all days. The individual appears to be relaively constant in activity during daytime hours. However, there are peaks in activity on Thursday and Friday between 6 p.m. and 9 p.m. 
 
 ```{r total activity across weeks, out.width = "100%", fig.width = 10, fig.asp = 0.65, fig.align = "center", dpi = 300, message = FALSE}
 total_actvty <- accel_data %>% 
@@ -212,7 +208,6 @@ wrap_elements(total_actvty / total_actvty_week_day) +
   ggtitle("Trends in total activity over the observation period")
 ```
 
-
-
+Lastly, I analyzed the how total activity changed across the whole observation period. The above figure shows the trend in activity across all 47 weeks alone and stratified by day of the week. As time increases, it appears that total activity does increase as well. It also appears that total activity was more variable towards the beginning of the study and became more consistent towards the end. 
 
 

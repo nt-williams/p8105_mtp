@@ -55,9 +55,9 @@ The first steps in this analysis required importing and tidying the data. I tran
 
 The cleaned accelerometer dataset contains `r nrow(accel_data)` observations and `r ncol(accel_data)` variables. Variables include the week, day, hour, and minute. Ultimately, the data represents `r nrow(accel_data) / 1440` days or `r as.integer(nrow(accel_data) / 24)` hours worth of data. The data is highly right skewed due to the presence of outliers; as such, in addition to total activity, the median and/or geometric mean are used throughout this analysis. The median and geometric average activity count throughout the entire observation period were `r median(accel_data$activity_count)` and `r round(exp(mean(log(accel_data$activity_count))), 2)` respectively. The modal activity count was 1 with `r accel_data %>% group_by(activity_count) %>% summarize(n = n()) %>% filter(n == max(n)) %>% .$n` observed minutes.
 
-### Exploratory analyses
+### Analyses
 
-```{r density plots of activity over the weeks, out.width = "75%", fig.align = "center", dpi = 300, warning = FALSE}
+```{r density plots of activity over the weeks, out.width = "65%", fig.align = "center", dpi = 300, warning = FALSE}
 density_full <- accel_data %>% 
   mutate(log_actvty_count = log(activity_count)) %>% 
   ggplot(aes(x = log_actvty_count, color = week_fct)) +
@@ -97,8 +97,9 @@ density_zoom_2 <- accel_data %>%
   theme(axis.title.x = element_blank(), 
         axis.title.y = element_blank())
 
-wrap_elements(density_full / (density_zoom_1 + density_zoom_2)) + 
-  ggtitle("Density plots of log activity count with zoomed axis")
+density_full / (density_zoom_1 + density_zoom_2) + 
+  plot_annotation(title = "Density plots of log activity count with zoomed axis", 
+                  caption = "Data provided by Jeff Goldsmith, PhD")
 ```
 
 In the above figure, I plotted the distribution of the log activity counts stratified by weekly intervals. The density plot is characterized by two distinct peaks centered around zero and six. Interestingly, the peak centered around zero (indicating minimal activity) begins to decrease as time moves forward while the peak centered around six begins to increase. This is the first indication that the individuals activity may have increased over time. 
@@ -125,7 +126,8 @@ total_agg_activity <- accel_data %>%
        x = "Day of the week", 
        y = "Total activity count")
 
-total_agg_activity + geo_agg_activity
+total_agg_activity + geo_agg_activity + 
+  plot_annotation(caption = "Data provided by Jeff Goldsmith, PhD")
 ```
 
 I also explored the effect of weekday on activity. The figure above shows total activity and the geometric mean of activity across the days of the week aggregated across all weeks. The lowest total activity occurs on Tuesdays while the highest among occurs on Friday's. Interestingly, however, based on the geometric mean, we'd expect that the lowest activity during any week would occur on Sunday instead of Tuesday. 
@@ -189,8 +191,9 @@ total_actvty_week_day <- accel_data %>%
         strip.text = element_text(color = "black")
   )
 
-wrap_elements(total_actvty / total_actvty_week_day) + 
-  ggtitle("Trends in total activity over the observation period")
+total_actvty / total_actvty_week_day  + 
+  plot_annotation(title = "Trends in total activity over the observation period", 
+                  caption = "Data provided by Jeff Goldsmith, PhD")
 ```
 
 Lastly, I analyzed the how total activity changed across the whole observation period. The above figure shows the trend in activity across all 47 weeks alone and stratified by day of the week. As time increases, it appears that total activity does increase as well. It also appears that total activity was more variable towards the beginning of the study and became more consistent towards the end. An increase in activity is observed across all days over the observation period. The trend of increase follows a similar pattern across all the days. However, for Saturday after week 35 there is a decrease in activity. Furthermore, it appears the rate of increase tapers off towards the end of the observation period. 

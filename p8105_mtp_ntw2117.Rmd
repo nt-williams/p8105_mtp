@@ -9,35 +9,36 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(patchwork)
 
-theme_set(theme_bw())
+theme_set(theme_bw()) # setting a constant theme
 ```
 
 ### Importing data
 
 ```{r importing data, message = FALSE}
 accel_data <- read_csv("./data/p8105_mtp_data.csv") %>% 
-  janitor::clean_names()
+  janitor::clean_names() # importing and cleaning variable names
 ```
 
 ### Cleaning data
 
 ```{r normalize or tidy data and creating an hour variable}
 accel_data <- accel_data %>% 
-  gather(key = "minute", value = "activity_count", activity_1:activity_1440) %>% 
+  gather(key = "minute", value = "activity_count", activity_1:activity_1440) %>% # converting to long form
   separate(minute, into = c("axe", "minute"), sep = "_") %>% 
   select(-axe) %>% 
   mutate(day = as_factor(day), 
          day = fct_relevel(day, c("Sunday", "Monday", "Tuesday", "Wednesday", 
-                                  "Thursday", "Friday", "Saturday")),
+                                  "Thursday", "Friday", "Saturday")), # re-leveling the day variable
          minute = as.integer(minute), 
          hour = cut(minute, breaks = c(-Inf, 61, 121, 181, 241, 301, 361, 
                                        421, 481, 541, 601, 661, 721, 781, 
                                        841, 901, 961, 1021, 1081, 1141, 1201, 
                                        1261, 1321, 1381, 1441), 
                     labels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 
-                               13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24)
+                               13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24) # creating an hour variable
          ), 
          week_fct = as.factor(week), 
+         # creating a collapsed week factor
          week_fct = fct_collapse(week_fct, 
                                  "1 - 5" = c("1", "2", "3", "4", "5"),
                                  "6 - 10" = c("6", "7", "8", "9", "10"), 
@@ -47,7 +48,7 @@ accel_data <- accel_data %>%
                                  "26 - 30" = c("26", "27", "28", "29", "30"), 
                                  "31 - 35" = c("31", "32", "33", "34", "35"), 
                                  "36 - 40" = c("36", "37", "38", "39", "40", "41"), 
-                                 "41 - 47" = c("42", "43", "44", "45", "46", "47"))
+                                 "41 - 47" = c("42", "43", "44", "45", "46", "47")) 
   )
 ```
 
@@ -57,17 +58,17 @@ The cleaned accelerometer dataset contains `r nrow(accel_data)` observations and
 
 ### Analyses
 
-```{r density plots of activity over the weeks, out.width = "65%", fig.align = "center", dpi = 300, warning = FALSE}
+```{r density plots of activity over the weeks, out.width = "65%", fig.asp = .8, fig.align = "center", dpi = 300, warning = FALSE}
 density_full <- accel_data %>% 
-  mutate(log_actvty_count = log(activity_count)) %>% 
+  mutate(log_actvty_count = log(activity_count)) %>% # creating log activity variable
   ggplot(aes(x = log_actvty_count, color = week_fct)) +
-  geom_density(size = 0.75, fill = "grey", alpha = 0.1) + 
+  geom_density(size = 0.75, fill = "grey", alpha = 0.1) + # indicating to make density plot
   viridis::scale_color_viridis(discrete = TRUE, 
                                name = "Week", 
                                option = "cividis") + 
   labs(x = "Log Activity Count", 
        y = "Density") + 
-  theme(legend.position = c(.93, .55), 
+  theme(legend.position = c(.93, .55), # putting legend inside plot
         legend.key.size = unit(.1, "in"),
         legend.title = element_text(size = 10), 
         legend.background = element_blank(), 
@@ -77,6 +78,7 @@ density_zoom_1 <- accel_data %>%
   mutate(log_actvty_count = log(activity_count)) %>% 
   ggplot(aes(x = log_actvty_count, color = week_fct)) +
   geom_density(size = 0.75, fill = "grey", alpha = 0.1) + 
+  # coord_cartesian is used to zoom in on the x axis
   coord_cartesian(xlim = c(0, 1)) + 
   viridis::scale_color_viridis(discrete = TRUE, 
                                guide = FALSE, 
@@ -89,6 +91,7 @@ density_zoom_2 <- accel_data %>%
   mutate(log_actvty_count = log(activity_count)) %>% 
   ggplot(aes(x = log_actvty_count, color = week_fct)) +
   geom_density(size = 0.75, fill = "grey", alpha = 0.1) + 
+  # once again zooming in on the x axis 
   coord_cartesian(xlim = c(2, 8), ylim = c(0, 0.3)) + 
   viridis::scale_color_viridis(discrete = TRUE, 
                                guide = FALSE, 
@@ -102,13 +105,13 @@ density_full / (density_zoom_1 + density_zoom_2) +
                   caption = "Data provided by Jeff Goldsmith, PhD")
 ```
 
-In the above figure, I plotted the distribution of the log activity counts stratified by weekly intervals. The density plot is characterized by two distinct peaks centered around zero and six. Interestingly, the peak centered around zero (indicating minimal activity) begins to decrease as time moves forward while the peak centered around six begins to increase. This is the first indication that the individuals activity may have increased over time. 
+In the above figure, I plotted the distribution of the log activity counts stratified by weekly intervals. The density plot is characterized by two distinct peaks centered around zero and six. Interestingly, the peak centered around zero (indicating minimal activity) begins to decrease as time moves forward while the peak centered around six begins to increase. This is the first indication that the individual's activity may have increased over time. 
 
 ```{r activity by day line plot, fig.width = 10, fig.asp = .4, out.width = "100%", dpi = 300, fig.align = "center"}
 geo_agg_activity <- accel_data %>% 
   group_by(day) %>% 
   mutate(log_actvty = log(activity_count)) %>% 
-  summarize(geo_avg_actvty = exp(mean(log_actvty))) %>%
+  summarize(geo_avg_actvty = exp(mean(log_actvty))) %>% # calculating geometric mean
   ggplot(aes(x = day, y = geo_avg_actvty)) + 
   geom_point(size = 4, color = "#A35E60") + 
   geom_line(group = 1) + 
@@ -130,10 +133,10 @@ total_agg_activity + geo_agg_activity +
   plot_annotation(caption = "Data provided by Jeff Goldsmith, PhD")
 ```
 
-I also explored the effect of weekday on activity. The figure above shows total activity and the geometric mean of activity across the days of the week aggregated across all weeks. The lowest total activity occurs on Tuesdays while the highest among occurs on Friday's. Interestingly, however, based on the geometric mean, we'd expect that the lowest activity during any week would occur on Sunday instead of Tuesday. 
+I also explored the effect of weekday on activity. The figure above shows total activity and the geometric mean of activity across the days of the week aggregated across all weeks. The lowest total activity occurs on Tuesdays while the highest occurs on Friday's. Interestingly, however, based on the geometric mean, we'd expect that the lowest activity during any week would occur on Sunday instead of Tuesday. 
   
 ```{r median activity by day and hour, fig.asp = .7, out.width = "70%", fig.align = "center", dpi = 300}
-med_actvty_all_days <- accel_data %>% 
+med_actvty_all_days <- accel_data %>% #created a separate dataset with median activity aggregated
   group_by(hour) %>% 
   summarize(med_activity = median(activity_count)) %>% 
   mutate(day = as.factor("All days"), 
@@ -145,10 +148,12 @@ accel_data %>%
   summarize(med_activity = median(activity_count)) %>% 
   ggplot(aes(x = hour, y = med_activity, color = day)) +
   geom_line(size = 1, alpha = 0.5) + 
+  # plotting aggregated data as a dashed line
   geom_line(data = med_actvty_all_days, lty = "dashed", size = 1.5) + 
   viridis::scale_color_viridis(name = "Day of the week", 
                                discrete = TRUE, 
                                option = "viridis",
+                               # adding a legend break for the aggregate level
                                breaks = c("All days", "Sunday", "Monday", "Tuesday",
                                           "Wednesday", "Thursday", "Friday", "Saturday")) + 
   scale_x_continuous(limits = c(0, 24), 
@@ -161,6 +166,7 @@ accel_data %>%
   theme(legend.position = c(.05, 1), 
         legend.justification = c(0, 1.1), 
         legend.key.size = unit(.1, "in"),
+        # putting legend inside plot
         legend.title = element_text(size = 10), 
         legend.background = element_blank(), 
         legend.box.background = element_rect(color = "black"))
@@ -173,16 +179,16 @@ total_actvty <- accel_data %>%
   group_by(week) %>% 
   summarize(total_actvty = sum(activity_count)) %>% 
   ggplot(aes(x = week, y = total_actvty)) + 
-  geom_line() + 
-  geom_smooth(color = "#A35E60", se = FALSE) + 
+  geom_line() + # making line plot
+  geom_smooth(color = "#A35E60", se = FALSE) + # adding a smoothing line for trend
   labs(y = "Total Activity") + 
   theme(axis.title.x = element_blank())
 
 total_actvty_week_day <- accel_data %>% 
   group_by(week, day) %>% 
-  summarize(total_actvty = sum(activity_count)) %>% # using geometric mean due to how skewed data is
+  summarize(total_actvty = sum(activity_count)) %>% #
   ggplot(aes(x = week, y = total_actvty)) + 
-  facet_grid(~ day) + 
+  facet_grid(~ day) + # creating a facet across days of the week
   geom_line() + 
   labs(x = "Week", 
        y = "Total Activity") + 
@@ -196,6 +202,6 @@ total_actvty / total_actvty_week_day  +
                   caption = "Data provided by Jeff Goldsmith, PhD")
 ```
 
-Lastly, I analyzed the how total activity changed across the whole observation period. The above figure shows the trend in activity across all 47 weeks alone and stratified by day of the week. As time increases, it appears that total activity does increase as well. It also appears that total activity was more variable towards the beginning of the study and became more consistent towards the end. An increase in activity is observed across all days over the observation period. The trend of increase follows a similar pattern across all the days. However, for Saturday after week 35 there is a decrease in activity. Furthermore, it appears the rate of increase tapers off towards the end of the observation period. 
+Lastly, I analyzed how total activity changed across the whole observation period. The above figure shows the trend in activity across all 47 weeks alone and stratified by day of the week. As time increases, it appears that total activity does increase as well. It also appears that total activity had more variation towards the beginning of the study and became more consistent towards the end. An increase in activity is observed across all days over the observation period. The trend of increase follows a similar pattern across all the days. However, for Saturday after week 35 there is a decrease in activity. Furthermore, it appears the rate of increase tapers off towards the end of the observation period. 
 
 
